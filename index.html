@@ -1,8 +1,3 @@
----
-
-### Updated `index.html`
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -160,7 +155,7 @@
         <div class="sdg-chip"><div class="sdg-num" style="background:#4C9F38;">3</div><div class="sdg-text"><div class="sdg-name">Good Health &amp; Well-being</div><div class="sdg-desc">Live air quality data lets people see respiratory health risk in real time.</div></div></div>
         <div class="sdg-chip"><div class="sdg-num" style="background:#C5192D;">4</div><div class="sdg-text"><div class="sdg-name">Quality Education</div><div class="sdg-desc">District literacy rates are surfaced and compared, highlighting where education investment matters most.</div></div></div>
         <div class="sdg-chip"><div class="sdg-num" style="background:#26BDE2;">6</div><div class="sdg-text"><div class="sdg-name">Clean Water &amp; Sanitation</div><div class="sdg-desc">Direct links to real reservoir &amp; water-supply dashboards for every district.</div></div></div>
-        <div class="sdg-chip"><div class="sdg-num" style="background:#FCC30B;">7</div><div class="sdg-text"><div class="sdg-name">Affordable &amp; Clean Energy</div><div class="sdg-desc">Direct links to real grid demand &amp; generation dashboards (TANGEDCO/POSOCO).</div></div></div>
+        <div class="sdg-chip"><div class="sdg-num" style="background:#FCC30B;">7</div><div class="sdg-text"><div class="sdg-name">Affordable &amp; Clean Energy</div><div class="sdg-desc">Direct links to real grid demand &amp; generation dashboards (TNPDCL/Grid-India).</div></div></div>
         <div class="sdg-chip"><div class="sdg-num" style="background:#FD6925;">9</div><div class="sdg-text"><div class="sdg-name">Industry, Innovation &amp; Infrastructure</div><div class="sdg-desc">The digital twin itself is an open-data decision-support tool built from scratch.</div></div></div>
         <div class="sdg-chip"><div class="sdg-num" style="background:#FD9D24;">11</div><div class="sdg-text"><div class="sdg-name">Sustainable Cities &amp; Communities</div><div class="sdg-desc">Population density &amp; growth data help planners see where urban pressure is building.</div></div></div>
         <div class="sdg-chip"><div class="sdg-num" style="background:#3F7E44;">13</div><div class="sdg-text"><div class="sdg-name">Climate Action</div><div class="sdg-desc">Live local weather data builds everyday climate awareness at the district level.</div></div></div>
@@ -419,8 +414,8 @@
       ${d.name==='Chennai' ? `<div class="link-card"><div><a href="https://chennaimetrowater.tn.gov.in/" target="_blank">Chennai Metrowater</a><div class="desc">Chennai-specific water supply status</div></div><i class="fa-solid fa-arrow-up-right-from-square"></i></div>` : ''}
 
       <div class="section-heading">Energy</div>
-      <div class="link-card"><div><a href="https://www.tangedco.gov.in/" target="_blank">TANGEDCO — Tamil Nadu Generation &amp; Distribution Corp.</a><div class="desc">Power generation, demand &amp; outage information</div></div><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
-      <div class="link-card"><div><a href="https://posoco.in/" target="_blank">POSOCO / Grid-India</a><div class="desc">Real-time regional grid demand data</div></div><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+      <div class="link-card"><div><a href="https://tangedco.org/en/tangedco/" target="_blank">TNPDCL — Tamil Nadu Power Distribution Corporation Limited</a><div class="desc">Power generation, demand &amp; outage information</div></div><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+      <div class="link-card"><div><a href="https://grid-india.in/en/" target="_blank">Grid-India — Power System Operation Corporation</a><div class="desc">Real-time regional grid demand data</div></div><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
 
       <div class="section-heading">District Administration</div>
       <div class="link-card"><div><a href="https://www.tn.gov.in/district_view" target="_blank">Government of Tamil Nadu — District Directory</a><div class="desc">Find ${d.name}'s official district portal (collectorate, schemes, contacts)</div></div><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
@@ -488,7 +483,6 @@ REAL DATA (do not invent additional statistics beyond this):
 Answer the user's question in 3-5 direct, well-reasoned sentences using this data as context. If asked about something you have no data for (e.g. exact live reservoir levels), say clearly that you don't have that live figure rather than guessing.`;
 
     try{
-      // Using the Google Gemini API REST endpoint directly for a clean, zero-dependency browser integration
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
       const r = await fetch(url, {
         method: 'POST',
