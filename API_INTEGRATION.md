@@ -68,26 +68,22 @@ Free tier: 30 requests/minute.
 Called directly from the browser using Anthropic's CORS-enabled endpoint. The visitor's key never leaves their session — it's held in a JavaScript variable, not written to disk or `localStorage`.
 
 ```javascript
-const r = await fetch('https://api.anthropic.com/v1/messages', {
+const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
+const r = await fetch(url, {
   method: 'POST',
   headers: {
-    'content-type': 'application/json',
-    'x-api-key': anthropicKey,           // pasted by the visitor
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-access': 'true'
+    'content-type': 'application/json'
   },
   body: JSON.stringify({
-    model: 'claude-sonnet-5',
-    max_tokens: 500,
-    system: systemPrompt,                 // built from real district.json + live weather/AQI figures
-    messages: [{ role: 'user', content: userQuestion }]
+    contents: [{ parts: [{ text: userQuestion }] }],
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    generationConfig: { maxOutputTokens: 500 }
   })
 });
 ```
 
-The `anthropic-dangerous-direct-browser-access` header is Anthropic's own documented mechanism for exactly this "bring your own key, call it from the browser" pattern — it's not a hack.
 
-**Why the visitor pastes their own key instead of you hardcoding one:** an Anthropic key is billed per request. Anyone who views your page's source could copy a hardcoded key and run up charges on your account. OpenWeatherMap/WAQI keys are low-stakes free-tier keys, so those are safe to ship in the file; a paid, usage-billed key is not.
+**Why the visitor pastes their own key instead of you hardcoding one:** an Gemini key is billed per request. Anyone who views your page's source could copy a hardcoded key and run up charges on your account. OpenWeatherMap/WAQI keys are low-stakes free-tier keys, so those are safe to ship in the file; a paid, usage-billed key is not.
 
 ---
 
@@ -98,8 +94,8 @@ Tamil Nadu's water and power authorities (TWAD Board, TANGEDCO, India-WRIS/CWC) 
 - TWAD Board — twadboard.tn.gov.in
 - India-WRIS reservoir dashboard — indiawris.gov.in/wris/#/reservoir
 - IMD rainfall — mausam.imd.gov.in
-- TANGEDCO — tangedco.gov.in
-- POSOCO/Grid-India — posoco.in
+- TNPDCL — tangedco.org/en/tangedco/
+- POSOCO/Grid-India — grid-india.in/en/
 
 If Tamil Nadu ever opens a public API for these (some states have started publishing open data via data.gov.in), swap the "Water & Energy" section in `renderResources()` in `index.html` for a live fetch — the pattern would look identical to the weather/AQI integrations above.
 
