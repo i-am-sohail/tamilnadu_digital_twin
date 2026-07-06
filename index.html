@@ -424,22 +424,30 @@
 
   function renderAI(){
     const d = current;
+    const otherDistricts = districts.filter(x=>x.code!==d.code);
     document.getElementById('ai').innerHTML = `
       <h2 style="margin-bottom:.5rem;">AI Insights — ${d.name}</h2>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;">
-        Powered by the Google Gemini API. Your API key is used only in this browser tab for this session — it is never saved to a file or sent anywhere except Google's secure gateway endpoint.
+        Powered by the Google Gemini API. This is a decision-support assistant: it reasons and recommends using the real data shown, plus general knowledge — it isn't limited to reciting numbers. Your API key stays only in this browser tab for this session.
       </p>
       <div class="ai-key-row">
         <input type="password" id="gemini-key-input" placeholder="Paste your Google Gemini API key (AIzaSy...)" value="${geminiKey}">
         <button class="btn secondary" onclick="saveKey()">Use this key</button>
       </div>
       <div class="ai-presets">
-        <button class="ai-preset" onclick="askAI('What are the biggest development priorities for this district right now?')">Development priorities</button>
-        <button class="ai-preset" onclick="askAI('What should residents know about current weather and air quality conditions here?')">Weather &amp; air quality briefing</button>
-        <button class="ai-preset" onclick="askAI('How does this district compare to the Tamil Nadu average on literacy and population density, and what does that suggest?')">Compare to TN average</button>
+        <button class="ai-preset" onclick="askAI('What are the biggest development priorities for this district right now, and what concrete steps would you recommend?')">Development plan</button>
+        <button class="ai-preset" onclick="askAI('What should residents know about current weather and air quality conditions here, and any precautions worth taking?')">Weather &amp; air quality briefing</button>
+        <button class="ai-preset" onclick="askAI('How does this district compare to the Tamil Nadu average on literacy and population density, and what does that suggest for policy?')">Compare to TN average</button>
       </div>
-      <textarea id="ai-input" rows="2" placeholder="Ask anything about ${d.name} district..." style="width:100%;margin-bottom:10px;"></textarea>
-      <button class="btn" onclick="askAI()">Ask</button>
+      <div class="form-group" style="margin-bottom:10px;max-width:320px;">
+        <label for="compare-select">Compare with another district (optional)</label>
+        <select id="compare-select">
+          <option value="">— None —</option>
+          ${otherDistricts.map(x=>`<option value="${x.code}">${x.name}</option>`).join('')}
+        </select>
+      </div>
+      <textarea id="ai-input" rows="2" placeholder="Ask anything about ${d.name} district, e.g. 'compare this with ${otherDistricts[0].name} for setting up a new school'"></textarea>
+      <button class="btn" onclick="askAI()" style="margin-top:8px;">Ask</button>
       <div class="ai-response" id="ai-response"></div>
     `;
   }
@@ -447,6 +455,11 @@
   function saveKey(){
     geminiKey = document.getElementById('gemini-key-input').value.trim();
     showMessage(geminiKey ? 'API key set for this session.' : 'Key cleared.', 'info');
+  }
+
+  function districtDataBlock(x){
+    const density = Math.round(x.population / x.area_km2);
+    return `- ${x.name} district — Headquarters: ${x.headquarters}; Population: ${x.population.toLocaleString('en-IN')}; Area: ${x.area_km2} km²; Density: ${density} people/km²; Literacy: ${x.literacy_pct}%${x.literacy_is_parent_estimate ? ' (2011 figure, inherited from undivided '+x.parent_district+' district)' : ' (Census 2011)'}; Formed: ${x.established}`;
   }
 
   async function askAI(preset){
@@ -469,18 +482,32 @@
       return;
     }
 
-    const density = Math.round(d.population / d.area_km2);
-    const systemPrompt = `You are the AI analysis engine for a Tamil Nadu district digital twin dashboard. You are looking at real government data for ${d.name} district, Tamil Nadu, India.
+    // Gather data for the current district, plus any other district picked in the
+    // compare dropdown, plus any district *named* directly in the free-text question —
+    // this is what makes "compare X with Y" actually work.
+    const compareCode = document.getElementById('compare-select')?.value || '';
+    const mentioned = districts.filter(x =>
+      x.code !== d.code && (x.code === compareCode || new RegExp(`\\b${x.name}\\b`,'i').test(q))
+    );
+    const relevantDistricts = [d, ...mentioned];
 
-REAL DATA (do not invent additional statistics beyond this):
-- Headquarters: ${d.headquarters}
-- Population: ${d.population.toLocaleString('en-IN')}
-- Area: ${d.area_km2} km²
-- Density: ${density} people/km²
-- Literacy rate: ${d.literacy_pct}% (Census 2011${d.literacy_is_parent_estimate ? ', inherited from undivided '+d.parent_district+' district' : ''})
-- District formed/established: ${d.established}
+    const dataBlock = relevantDistricts.map(districtDataBlock).join('\n');
+    const tnAvgPop = Math.round(districts.reduce((s,x)=>s+x.population,0)/districts.length);
+    const tnAvgLit = (districts.reduce((s,x)=>s+x.literacy_pct,0)/districts.length).toFixed(1);
 
-Answer the user's question in 3-5 direct, well-reasoned sentences using this data as context. If asked about something you have no data for (e.g. exact live reservoir levels), say clearly that you don't have that live figure rather than guessing.`;
+    const systemPrompt = `You are the AI decision-support engine for a Tamil Nadu district digital twin dashboard, built for a school AI project. Your job is to give real, useful, opinionated analysis and recommendations — not just recite numbers back.
+
+REAL DATA YOU HAVE (Government of Tamil Nadu district data + Census 2011 literacy):
+${dataBlock}
+
+Tamil Nadu district averages for reference: population ~${tnAvgPop.toLocaleString('en-IN')}, literacy ~${tnAvgLit}%.
+
+HOW TO ANSWER:
+- If the question compares districts, directly compare the numbers above for each named district, point out the meaningful differences, and give a clear recommendation or conclusion — don't just restate both sets of numbers.
+- If asked for a development plan, priorities, or recommendations: actually give one. Use the real data above as your starting evidence (e.g. low literacy → prioritize schools; high density → prioritize housing/transit/waste management), then reason further using general knowledge of Indian district administration, infrastructure, and public policy. Give 3-5 concrete, specific recommendations, not vague generalities.
+- Clearly distinguish real data from your own reasoning, e.g. "Given the literacy rate of X%, I'd recommend..." vs "Based on general best practice for districts of this density...". Never present a guess as if it were an official figure.
+- Only say "I don't have that data" for things no reasonable district-level reasoning could address (e.g. an exact live reservoir level right now) — never use it as a way to avoid giving an opinion or recommendation.
+- Write like a knowledgeable planning advisor: direct, specific, and actionable. Use short paragraphs or a brief bulleted list. Aim for 120-220 words.`;
 
     try{
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
@@ -497,18 +524,25 @@ Answer the user's question in 3-5 direct, well-reasoned sentences using this dat
             parts: [{ text: systemPrompt }]
           },
           generationConfig: {
-            maxOutputTokens: 500
+            maxOutputTokens: 700,
+            temperature: 0.6
           }
         })
       });
-      
+
       const data = await r.json();
       if(!r.ok){
         throw new Error(data?.error?.message || `API error (${r.status})`);
       }
-      
+
+      const candidate = data.candidates?.[0];
+      const text = candidate?.content?.parts?.map(p=>p.text).join('') || '';
+      if(!text){
+        const reason = candidate?.finishReason ? ` (finishReason: ${candidate.finishReason})` : '';
+        throw new Error('Empty response from Gemini' + reason);
+      }
       resp.className = 'ai-response';
-      resp.textContent = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received.';
+      resp.textContent = text;
     }catch(err){
       resp.className = 'ai-response';
       resp.textContent = 'AI request failed: ' + err.message;
